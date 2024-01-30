@@ -1,0 +1,12 @@
+### DotnetCore ###
+# .NET Core build folders
+bin/
+obj/
+MinimalAPIPeliculas/bin/
+MinimalAPIPeliculas/obj/
+*.vsidx
+.vs/
+
+# Common node modules locations
+/node_modules
+/wwwroot/node_modules
