@@ -7,6 +7,7 @@ using MinimalAPIPeliculas.Data;
 using MinimalAPIPeliculas.Endpoints;
 using MinimalAPIPeliculas.Models;
 using MinimalAPIPeliculas.Repositories;
+using MinimalAPIPeliculas.Servicios;
 using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +36,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IRepositorioGeneros, RepositorioGeneros>();
 builder.Services.AddScoped<IRepositorioActores, RepositorioActores>();
+builder.Services.AddScoped<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
+builder.Services.AddHttpContextAccessor(); //For storage locally
 
 builder.Services.AddAutoMapper(typeof(Program));
 
@@ -47,13 +50,14 @@ if (builder.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseStaticFiles(); //For storage locally
 app.UseCors();
 app.UseOutputCache();
 
 app.MapGet("/", [EnableCors(policyName: "libre")]() =>  "Hello World");
 
 app.MapGroup("/generos").MapGeneros();
+app.MapGroup("/actores").MapActores();
 
 //END: area middlewares
 
