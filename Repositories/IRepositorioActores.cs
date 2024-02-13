@@ -9,6 +9,7 @@ namespace MinimalAPIPeliculas.Repositories
         Task Eliminar(int id);
         Task<bool> Existe(int id);
         Task<Actor?> ObtenerPorId(int id);
+        Task<List<Actor>> ObtenerPorNombre(string nombre);
         Task<List<Actor>> ObtenerTodos();
     }
 }

@@ -15,6 +15,9 @@ namespace MinimalAPIPeliculas.Endpoints
         public static RouteGroupBuilder MapActores(this RouteGroupBuilder group)
         {
             group.MapPost("/", Crear).DisableAntiforgery();
+            group.MapGet("/", ObtenerTodos).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actores-get"));
+            group.MapGet("/{id:int}", ObtenerPorId);
+            group.MapGet("obtenerPorNombre/{nombre}", ObtenerPorNombre);
             return group;
         }
 
@@ -32,6 +35,31 @@ namespace MinimalAPIPeliculas.Endpoints
             await outputCacheStore.EvictByTagAsync("actores-get", default);
             var actorDTO = mapper.Map<ActorDTO>(actor);
             return TypedResults.Created($"/actores/{id}", actorDTO);
+        }
+
+        static async Task<Ok<List<ActorDTO>>> ObtenerTodos(IRepositorioActores repositorio, IMapper mapper)
+        {
+            var actores = await repositorio.ObtenerTodos();
+            var actorDTO = mapper.Map<List<ActorDTO>>(actores);
+            return TypedResults.Ok(actorDTO);
+        }
+
+        static async Task<Ok<List<ActorDTO>>> ObtenerPorNombre(string nombre, IRepositorioActores repositorio, IMapper mapper)
+        {
+            var actores = await repositorio.ObtenerPorNombre(nombre);
+            var actorDTO = mapper.Map<List<ActorDTO>>(actores);
+            return TypedResults.Ok(actorDTO);
+        }
+
+        static async Task<Results<Ok<ActorDTO>, NotFound>> ObtenerPorId(int id, IRepositorioActores repositorio, IMapper mapper)
+        {
+            var actor = await repositorio.ObtenerPorId(id);
+            if(actor is null)
+            {
+                return TypedResults.NotFound();
+            }
+            var actorDTO = mapper.Map<ActorDTO>(actor);
+            return TypedResults.Ok(actorDTO);
         }
     }
 }
