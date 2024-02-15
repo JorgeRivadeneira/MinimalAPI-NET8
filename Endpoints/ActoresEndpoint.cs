@@ -37,9 +37,11 @@ namespace MinimalAPIPeliculas.Endpoints
             return TypedResults.Created($"/actores/{id}", actorDTO);
         }
 
-        static async Task<Ok<List<ActorDTO>>> ObtenerTodos(IRepositorioActores repositorio, IMapper mapper)
+        static async Task<Ok<List<ActorDTO>>> ObtenerTodos(IRepositorioActores repositorio, IMapper mapper,
+            int pagina = 1, int recordsPorPagina = 10)
         {
-            var actores = await repositorio.ObtenerTodos();
+            var paginacion = new PaginacionDTO { Pagina = pagina, RecordsPorPagina = recordsPorPagina };
+            var actores = await repositorio.ObtenerTodos(paginacion);
             var actorDTO = mapper.Map<List<ActorDTO>>(actores);
             return TypedResults.Ok(actorDTO);
         }
