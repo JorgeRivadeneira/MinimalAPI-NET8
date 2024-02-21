@@ -36,6 +36,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IRepositorioGeneros, RepositorioGeneros>();
 builder.Services.AddScoped<IRepositorioActores, RepositorioActores>();
+builder.Services.AddScoped<IRepositorioPeliculas, RepositorioPeliculas>();
 builder.Services.AddScoped<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
 builder.Services.AddHttpContextAccessor(); //For storage locally
 
@@ -58,6 +59,7 @@ app.MapGet("/", [EnableCors(policyName: "libre")]() =>  "Hello World");
 
 app.MapGroup("/generos").MapGeneros();
 app.MapGroup("/actores").MapActores();
+app.MapGroup("/peliculas").MapPeliculas();
 
 //END: area middlewares
 
