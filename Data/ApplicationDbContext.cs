@@ -24,6 +24,7 @@ namespace MinimalAPIPeliculas.Data
         public DbSet<Genero> Generos { get; set; }
         public DbSet<Actor> Actores { get; set; }
         public DbSet<Pelicula> Peliculas { get; set; }
+        public DbSet<Comentario> Comentarios { get; set; }
 
     }
 }
