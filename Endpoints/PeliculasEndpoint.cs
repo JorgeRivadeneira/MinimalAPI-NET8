@@ -19,6 +19,8 @@ namespace MinimalAPIPeliculas.Endpoints
             group.MapGet("/{id:int}", ObtenerPorId);
             group.MapPut("/{id:int}", Actualizar).DisableAntiforgery();
             group.MapDelete("/{id:int}", Borrar);
+            group.MapPost("/{id:int}/asignarGeneros", AsignarGeneros);
+            group.MapPost("/{id:int}/asignarActores", AsignarActores);
             return group;
         }
 
@@ -95,6 +97,55 @@ namespace MinimalAPIPeliculas.Endpoints
             await repositorio.Borrar(id);
             await almacenadorArchivos.Borrar(peliculaDB.Poster, contenedor);
             await outputCacheStore.EvictByTagAsync("peliculas-get", default);
+            return TypedResults.NoContent();
+        }
+
+        static async Task<Results<NoContent, NotFound, BadRequest<string>>> AsignarGeneros(int id, List<int> generosIds, IRepositorioPeliculas repositorioPeliculas,
+            IRepositorioGeneros repositorioGeneros)
+        {
+            if(!await repositorioPeliculas.Existe(id))
+            {
+                return TypedResults.NotFound();
+            }
+
+            var generosExistentes = new List<int>();
+            if(generosIds.Count != 0)
+            {
+                generosExistentes = await repositorioGeneros.Existen(generosIds);
+            }
+
+            if(generosExistentes.Count != generosIds.Count)
+            {
+                var generosNoExistentes = generosIds.Except(generosExistentes);
+                return TypedResults.BadRequest($"Los generos de id {string.Join(",", generosNoExistentes)} no existen");
+            }
+
+            await repositorioPeliculas.AsignarGeneros(id, generosExistentes);
+            return TypedResults.NoContent();
+        }
+
+        static async Task<Results<NotFound, NoContent, BadRequest<string>>> AsignarActores(int id, List<AsignarActorPeliculaDTO> actoresDTO,
+            IRepositorioPeliculas repositorioPeliculas, IRepositorioActores repositorioActores, IMapper mapper)
+        {
+            if (!await repositorioPeliculas.Existe(id)) { return TypedResults.NotFound(); }
+
+            var actoresExistentes = new List<int>();
+            var actoresIds = actoresDTO.Select(a => a.ActorId).ToList();
+
+            if (actoresDTO.Count != 0)
+            {
+                actoresExistentes = await repositorioActores.Existen(actoresIds);
+            }
+
+            if (actoresExistentes.Count != actoresDTO.Count)
+            {
+                var actoresNoExistentes = actoresIds.Except(actoresExistentes);
+
+                return TypedResults.BadRequest($"Los actores de id {string.Join(",", actoresExistentes)} no existen");
+            }
+
+            var actores = mapper.Map<List<ActorPelicula>>(actoresDTO);
+            await repositorioPeliculas.AsignarActores(id, actores);
             return TypedResults.NoContent();
         }
     }

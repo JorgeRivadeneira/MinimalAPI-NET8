@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MinimalAPIPeliculas.Endpoints;
 using MinimalAPIPeliculas.Entities;
 using MinimalAPIPeliculas.Models;
 
@@ -20,11 +21,17 @@ namespace MinimalAPIPeliculas.Data
 
             modelBuilder.Entity<Pelicula>().Property(p => p.Titulo).HasMaxLength(150);
             modelBuilder.Entity<Pelicula>().Property(p => p.Titulo).IsUnicode();
+
+            modelBuilder.Entity<GeneroPelicula>().HasKey(g => new { g.GeneroId, g.PeliculaId });
+
+            modelBuilder.Entity<ActorPelicula>().HasKey(a => new { a.PeliculaId, a.ActorId });
         }
         public DbSet<Genero> Generos { get; set; }
         public DbSet<Actor> Actores { get; set; }
         public DbSet<Pelicula> Peliculas { get; set; }
         public DbSet<Comentario> Comentarios { get; set; }
+        public DbSet<GeneroPelicula> GenerosPeliculas { get; set; }
+        public DbSet<ActorPelicula> ActoresPeliculas { get; set; }
 
     }
 }

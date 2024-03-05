@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MinimalAPIPeliculas.Data;
 
@@ -11,9 +12,11 @@ using MinimalAPIPeliculas.Data;
 namespace MinimalAPIPeliculas.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240302223055_Generos-Peliculas")]
+    partial class GenerosPeliculas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,28 +24,6 @@ namespace MinimalAPIPeliculas.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("MinimalAPIPeliculas.Endpoints.ActorPelicula", b =>
-                {
-                    b.Property<int>("PeliculaId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ActorId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Orden")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Personaje")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("PeliculaId", "ActorId");
-
-                    b.HasIndex("ActorId");
-
-                    b.ToTable("ActoresPeliculas");
-                });
 
             modelBuilder.Entity("MinimalAPIPeliculas.Entities.Actor", b =>
                 {
@@ -152,25 +133,6 @@ namespace MinimalAPIPeliculas.Migrations
                     b.ToTable("Generos");
                 });
 
-            modelBuilder.Entity("MinimalAPIPeliculas.Endpoints.ActorPelicula", b =>
-                {
-                    b.HasOne("MinimalAPIPeliculas.Entities.Actor", "Actor")
-                        .WithMany("ActoresPelicula")
-                        .HasForeignKey("ActorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MinimalAPIPeliculas.Entities.Pelicula", "Pelicula")
-                        .WithMany("ActoresPelicula")
-                        .HasForeignKey("PeliculaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Actor");
-
-                    b.Navigation("Pelicula");
-                });
-
             modelBuilder.Entity("MinimalAPIPeliculas.Entities.Comentario", b =>
                 {
                     b.HasOne("MinimalAPIPeliculas.Entities.Pelicula", null)
@@ -199,15 +161,8 @@ namespace MinimalAPIPeliculas.Migrations
                     b.Navigation("Pelicula");
                 });
 
-            modelBuilder.Entity("MinimalAPIPeliculas.Entities.Actor", b =>
-                {
-                    b.Navigation("ActoresPelicula");
-                });
-
             modelBuilder.Entity("MinimalAPIPeliculas.Entities.Pelicula", b =>
                 {
-                    b.Navigation("ActoresPelicula");
-
                     b.Navigation("Comentarios");
 
                     b.Navigation("GenerosPelicula");
