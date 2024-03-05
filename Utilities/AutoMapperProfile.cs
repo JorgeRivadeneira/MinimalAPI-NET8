@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MinimalAPIPeliculas.DTOs;
+using MinimalAPIPeliculas.Endpoints;
 using MinimalAPIPeliculas.Entities;
 using MinimalAPIPeliculas.Models;
 
@@ -22,10 +23,25 @@ namespace MinimalAPIPeliculas.Utilities
 
             CreateMap<CrearPeliculaDTO, Pelicula>()
                 .ForMember(x => x.Poster, opciones => opciones.Ignore());
-            CreateMap<Pelicula, PeliculaDTO>();
+            CreateMap<Pelicula, PeliculaDTO>()
+                .ForMember(p => p.Generos,
+                entidad => entidad.MapFrom(p =>
+                p.GenerosPelicula.Select(gp =>
+                    new GeneroDTO { Id = gp.GeneroId, Nombre = gp.Genero.Nombre })))
+                .ForMember(p => p.Actores, entidad => entidad.MapFrom(p =>
+                p.ActoresPelicula.Select(ap =>
+                    new ActorPeliculaDTO
+                    {
+                        Id = ap.ActorId,
+                        Nombre = ap.Actor.Nombre,
+                        Personaje = ap.Personaje
+                    })));
+
 
             CreateMap<CrearComentarioDTO, Comentario>();
             CreateMap<Comentario, ComentarioDTO>();
+
+            CreateMap<AsignarActorPeliculaDTO, ActorPelicula>();
         }
     }
 }
