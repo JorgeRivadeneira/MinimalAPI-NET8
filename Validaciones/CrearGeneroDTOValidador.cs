@@ -18,9 +18,9 @@ namespace MinimalAPIPeliculas.Validaciones
             }
 
             //Validaciones FluentValidation
-            RuleFor(x => x.Nombre).NotEmpty().WithMessage("El campo {PropertyName} es obligatorio")
-                .MaximumLength(50).WithMessage("El campo {PropertyName} debe tener menos de {MaxLength} caracteres")
-                .Must(ValidarPrimeraLetraMayuscula).WithMessage("El campo {PropertyName} debe comenzar con mayúsculas")
+            RuleFor(x => x.Nombre).NotEmpty().WithMessage(Utilidades.CampoRequeridoMensaje)
+                .MaximumLength(50).WithMessage(Utilidades.MaximaLongitudPermitida)
+                .Must(Utilidades.ValidarPrimeraLetraMayuscula).WithMessage(Utilidades.PrimeraLetraMayusculaMensaje)
                 .MustAsync(async (nombre, _) =>
                 {
                     var existe = await repositorioGeneros.Existe(id, nombre);
@@ -28,15 +28,6 @@ namespace MinimalAPIPeliculas.Validaciones
                 }).WithMessage(g => $"Ya existe un género con el nombre {g.Nombre}");
         }
 
-        private bool ValidarPrimeraLetraMayuscula(string valor)
-        {
-            if (string.IsNullOrWhiteSpace(valor))
-            {
-                return true;
-            }
 
-            var primeraLetra = valor[0].ToString();
-            return primeraLetra == primeraLetra.ToUpper();
-        }
     }
 }

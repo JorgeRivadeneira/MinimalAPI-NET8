@@ -7,8 +7,13 @@ namespace MinimalAPIPeliculas.Validaciones
     {
         public CrearActorDTOValidador()
         {
-            RuleFor(x => x.Nombre).NotEmpty().WithMessage("El campo {PropertyName} es requerido")
-                .MaximumLength(150).WithMessage("El campo {PropertyName} debe tener menos de {MaxLength} caracteres");
+            RuleFor(x => x.Nombre).NotEmpty().WithMessage(Utilidades.CampoRequeridoMensaje)
+                .MaximumLength(150).WithMessage(Utilidades.MaximaLongitudPermitida);
+
+            var fechaMinima = new DateTime(1900, 1, 1);
+
+            RuleFor(x => x.FechaNacimiento).GreaterThanOrEqualTo(fechaMinima)
+                .WithMessage(Utilidades.GreatherThanOrEqualToMensaje(fechaMinima));
         }
     }
 }
