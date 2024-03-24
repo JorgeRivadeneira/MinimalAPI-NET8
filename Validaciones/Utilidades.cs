@@ -5,6 +5,7 @@
         public static string CampoRequeridoMensaje = "El campo {PropertyName} es requerido";
         public static string MaximaLongitudPermitida = "El campo {PropertyName} debe tener menos de {MaxLength} caracteres";
         public static string PrimeraLetraMayusculaMensaje = "El campo {PropertyName} debe comenzar con mayúsculas";
+        public static string EmailMensaje = "El campo {PropertyName} debe ser un Email válido";
 
         public static bool ValidarPrimeraLetraMayuscula(string valor)
         {

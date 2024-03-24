@@ -15,12 +15,12 @@ namespace MinimalAPIPeliculas.Endpoints
         private static readonly string contenedor = "peliculas";
         public static RouteGroupBuilder MapPeliculas(this RouteGroupBuilder group)
         {
-            group.MapPost("/", Crear).DisableAntiforgery();
+            group.MapPost("/", Crear).DisableAntiforgery().RequireAuthorization("isAdmin");
             group.MapGet("/", Obtener).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("peliculas-get"));
             group.MapGet("/{id:int}", ObtenerPorId);
-            group.MapPut("/{id:int}", Actualizar).DisableAntiforgery().AddEndpointFilter<FiltroValidaciones<CrearPeliculaDTO>>();
-            group.MapDelete("/{id:int}", Borrar);
-            group.MapPost("/{id:int}/asignarGeneros", AsignarGeneros).AddEndpointFilter<FiltroValidaciones<CrearPeliculaDTO>>();
+            group.MapPut("/{id:int}", Actualizar).DisableAntiforgery().AddEndpointFilter<FiltroValidaciones<CrearPeliculaDTO>>().RequireAuthorization("isAdmin");
+            group.MapDelete("/{id:int}", Borrar).RequireAuthorization("isAdmin");
+            group.MapPost("/{id:int}/asignarGeneros", AsignarGeneros).AddEndpointFilter<FiltroValidaciones<CrearPeliculaDTO>>().RequireAuthorization("isAdmin");
             //group.MapPost("/{id:int}/asignarActores", AsignarActores);
             return group;
         }

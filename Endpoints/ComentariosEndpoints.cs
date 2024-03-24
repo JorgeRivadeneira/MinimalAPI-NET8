@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Data.SqlClient.DataClassification;
 using MinimalAPIPeliculas.DTOs;
@@ -7,6 +8,7 @@ using MinimalAPIPeliculas.Entities;
 using MinimalAPIPeliculas.Filtros;
 using MinimalAPIPeliculas.Migrations;
 using MinimalAPIPeliculas.Repositories;
+using MinimalAPIPeliculas.Servicios;
 
 namespace MinimalAPIPeliculas.Endpoints
 {
@@ -17,47 +19,77 @@ namespace MinimalAPIPeliculas.Endpoints
             group.MapGet("/", ObtenerTodos)
                 .CacheOutput(o => o.Expire(TimeSpan.FromSeconds(60)).Tag("comentarios-get").SetVaryByRouteValue(new string[] { "peliculaId" }));
             group.MapGet("/{id:int}", ObtenerPorId);
-            group.MapPost("/", Crear).AddEndpointFilter<FiltroValidaciones<CrearComentarioDTO>>();
+            group.MapPost("/", Crear).AddEndpointFilter<FiltroValidaciones<CrearComentarioDTO>>().RequireAuthorization();
 
-            group.MapPut("/{id:int}", Actualizar).AddEndpointFilter<FiltroValidaciones<CrearComentarioDTO>>(); ;
-            group.MapDelete("/{id:int}", Borrar);
+            group.MapPut("/{id:int}", Actualizar).AddEndpointFilter<FiltroValidaciones<CrearComentarioDTO>>().RequireAuthorization();
+            group.MapDelete("/{id:int}", Borrar).RequireAuthorization();
             return group;
         }
 
-        static async Task<Results<NoContent, NotFound>> Actualizar(int peliculaId, int id, 
+        static async Task<Results<NoContent, NotFound, ForbidHttpResult>> Actualizar(int peliculaId, int id, 
             CrearComentarioDTO crearComentarioDTO , IOutputCacheStore outputCacheStore, 
-            IRepositorioComentarios repositorioComentarios, IRepositorioPeliculas repositorioPeliculas, IMapper mapper)
+            IRepositorioComentarios repositorioComentarios, IRepositorioPeliculas repositorioPeliculas, IServicioUsuario servicioUsuario)
         {
             if (!await repositorioPeliculas.Existe(peliculaId))
             {
                 return TypedResults.NotFound();
             }
 
+            var comentarioDB = await repositorioComentarios.ObtenerPorId(id);
+            if(comentarioDB is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            var usuario = await servicioUsuario.ObtenerUsuario();
+            if(usuario is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            if(comentarioDB.UsuarioId != usuario.Id)
+            {
+                return TypedResults.Forbid();
+            }
+
             if (!await repositorioComentarios.Existe(id))
             {
                 return TypedResults.NotFound();
             }
 
-            var comentario = mapper.Map<Comentario>(crearComentarioDTO);
-            comentario.Id = id;
-            comentario.PeliculaId = peliculaId;
+            comentarioDB.Cuerpo = crearComentarioDTO.Cuerpo;
 
-            await repositorioComentarios.Actualizar(comentario);
+            await repositorioComentarios.Actualizar(comentarioDB);
             await outputCacheStore.EvictByTagAsync("comentarios-get", default);
-            return TypedResults.NotFound();
+            return TypedResults.NoContent();
 
         }
 
-        static async Task<Results<NoContent, NotFound>> Borrar(int peliculaId, int id, 
-            IRepositorioComentarios repositorioComentarios, IOutputCacheStore outputCacheStore)
+        static async Task<Results<NoContent, NotFound, ForbidHttpResult>> Borrar(int peliculaId, int id, 
+            IRepositorioComentarios repositorioComentarios, IOutputCacheStore outputCacheStore,
+            IServicioUsuario servicioUsuario)
         {
-            if (!await repositorioComentarios.Existe(id))
+
+            var comentarioDB = await repositorioComentarios.ObtenerPorId(id);
+            if (comentarioDB is null)
             {
                 return TypedResults.NotFound();
             }
+
+            var usuario = await servicioUsuario.ObtenerUsuario();
+            if (usuario is null)
+            {
+                return TypedResults.NotFound();
+            }
+
+            if (comentarioDB.UsuarioId != usuario.Id)
+            {
+                return TypedResults.Forbid();
+            }
+
             await repositorioComentarios.Borrar(id);
             await outputCacheStore.EvictByTagAsync("comentarios-get", default);
-            return TypedResults.NotFound();
+            return TypedResults.NoContent();
         }
 
         static async Task<Results<Ok<List<ComentarioDTO>>, NotFound>> ObtenerTodos(int peliculaId,
@@ -89,16 +121,22 @@ namespace MinimalAPIPeliculas.Endpoints
             return TypedResults.Ok(comentarioDTO);
         }
 
-        static async Task<Results<Created<ComentarioDTO>, NotFound>> Crear(int peliculaId,
+        static async Task<Results<Created<ComentarioDTO>, NotFound, BadRequest<string>>> Crear(int peliculaId,
             CrearComentarioDTO crearComentarioDTO, IRepositorioComentarios repositorioComentarios,
-            IRepositorioPeliculas repositorioPeliculas, IMapper mapper, IOutputCacheStore outputCacheStore)
+            IRepositorioPeliculas repositorioPeliculas, IMapper mapper, IOutputCacheStore outputCacheStore,
+            IServicioUsuario servicioUsuario)
         {
             if(!await repositorioPeliculas.Existe(peliculaId))
             {
                 return TypedResults.NotFound();
             }
 
+            var usuario = await servicioUsuario.ObtenerUsuario();
+
+            if(usuario is null) { return TypedResults.BadRequest("Usuario no Encontrado"); }           
+
             var comentario = mapper.Map<Comentario>(crearComentarioDTO);
+            comentario.UsuarioId = usuario.Id;
             comentario.PeliculaId = peliculaId;
             var id = await repositorioComentarios.Crear(comentario);
             await outputCacheStore.EvictByTagAsync("comentarios-get", default);
