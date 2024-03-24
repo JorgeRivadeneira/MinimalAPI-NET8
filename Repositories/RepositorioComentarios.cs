@@ -37,7 +37,7 @@ namespace MinimalAPIPeliculas.Repositories
 
         public async Task Actualizar(Comentario comentario)
         {
-            context.Add(comentario);
+            context.Update(comentario);
             await context.SaveChangesAsync();
         }
 
