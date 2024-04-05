@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MinimalAPIPeliculas.Data;
 using MinimalAPIPeliculas.Endpoints;
+using MinimalAPIPeliculas.GraphQL;
 using MinimalAPIPeliculas.Models;
 using MinimalAPIPeliculas.Repositories;
 using MinimalAPIPeliculas.Servicios;
@@ -23,6 +24,14 @@ var origenesPermitidos = builder.Configuration.GetValue<string>("origenesPermiti
 
 builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
     opciones.UseSqlServer("name=DefaultConnection"));
+
+builder.Services.AddGraphQLServer()
+    .AddQueryType<Query>()
+    .AddAuthorization()
+    .AddProjections()
+    .AddFiltering()
+    .AddMutationType<Mutacion>()
+    .AddSorting();
 
 //Config para Identity:
 builder.Services.AddIdentityCore<IdentityUser>()
@@ -149,6 +158,7 @@ app.UseStaticFiles(); //For storage locally
 app.UseCors();
 app.UseOutputCache();
 app.UseAuthorization();
+app.MapGraphQL();
 
 app.MapGet("/", [EnableCors(policyName: "libre")] () => "Hello World");
 

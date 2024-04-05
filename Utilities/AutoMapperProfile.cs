@@ -12,6 +12,7 @@ namespace MinimalAPIPeliculas.Utilities
         {
             //Since: CrearGeneroDTO => Genero
             CreateMap<CrearGeneroDTO, Genero>();
+            CreateMap<ActualizarGeneroDTO, Genero>();
 
             //Genero => GeneroDTO
             CreateMap<Genero, GeneroDTO>();

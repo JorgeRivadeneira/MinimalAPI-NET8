@@ -1,4 +1,6 @@
 ﻿
+using Path = System.IO.Path; //alias cuando existe conflicto entre paquetes
+
 namespace MinimalAPIPeliculas.Servicios
 {
     public class AlmacenadorArchivosLocal : IAlmacenadorArchivos
