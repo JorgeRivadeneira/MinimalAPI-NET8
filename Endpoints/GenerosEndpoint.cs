@@ -13,42 +13,59 @@ namespace MinimalAPIPeliculas.Endpoints
     {
         public static RouteGroupBuilder MapGeneros(this RouteGroupBuilder group)
         {
-            group.MapGet("/", ObtenerGeneros).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("generos-get"))
-                .RequireAuthorization();
+            group.MapGet("/", ObtenerGeneros).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("generos-get"));
+                //.RequireAuthorization();
             group.MapGet("/{id:int}", ObtenerGeneroPorId).AddEndpointFilter<FiltroDePrueba>();
             group.MapPost("/", CrearGenero).AddEndpointFilter<FiltroValidaciones<CrearGeneroDTO>>().RequireAuthorization("isAdmin");
-            group.MapPut("/{id:int}", ActualizarGenero).AddEndpointFilter<FiltroValidaciones<CrearGeneroDTO>>().RequireAuthorization("isAdmin");
+
+            group.MapPut("/{id:int}", ActualizarGenero)
+                .AddEndpointFilter<FiltroValidaciones<CrearGeneroDTO>>()
+                .RequireAuthorization("isAdmin")
+                .WithOpenApi(opciones =>
+                {
+                    opciones.Summary = "Actualizar un género";
+                    opciones.Description = "Con éste endpoint podemos actualizar un género";
+                    opciones.Parameters[0].Description = "El id del género a actualizar";
+                    opciones.RequestBody.Description = "El género que se desea actualizar";
+
+                    return opciones;
+                });
+
             group.MapDelete("/", EliminarGenero).RequireAuthorization("isAdmin");
 
             return group;
         }
 
-        static async Task<Ok<List<GeneroDTO>>> ObtenerGeneros(IRepositorioGeneros repositorio, IMapper mapper)
+        static async Task<Ok<List<GeneroDTO>>> ObtenerGeneros(IRepositorioGeneros repositorio, 
+            IMapper mapper, ILoggerFactory loggerFactory)
         {
+            var tipo = typeof(GenerosEndpoint);
+            var logger = loggerFactory.CreateLogger(tipo.FullName!);
+            logger.LogInformation("Obteniendo el listado de géneros");
+
             var generos = await repositorio.ObtenerTodos();
             //var generosDTO = generos.Select(x => new GeneroDTO { Id = x.Id, Nombre = x.Nombre }).ToList();
             var generosDTO = mapper.Map<List<GeneroDTO>>(generos);  //List<Genero> => List<GeneroDTO>
             return TypedResults.Ok(generosDTO);
         }
 
-        static async Task<Results<Ok<GeneroDTO>, NotFound>> ObtenerGeneroPorId(int id, IRepositorioGeneros repositorio, IMapper mapper)
+        static async Task<Results<Ok<GeneroDTO>, NotFound>> ObtenerGeneroPorId([AsParameters]ObtenerGeneroPorIdPeticionDTO modelo)
         {
-            var genero = await repositorio.ObtenerPorId(id);
+            var genero = await modelo.RepositorioGeneros.ObtenerPorId(modelo.Id);
             if (genero is null)
             {
                 return TypedResults.NotFound();
             }
-            var generoDTO = mapper.Map<GeneroDTO>(genero);
+            var generoDTO = modelo.Mapper.Map<GeneroDTO>(genero);
             return TypedResults.Ok(generoDTO);
         }
 
-        static async Task<Results<Created<GeneroDTO>, ValidationProblem>> CrearGenero(CrearGeneroDTO crearGeneroDTO, IRepositorioGeneros repositorio, 
-            IOutputCacheStore outputCacheStore, IMapper mapper)
+        static async Task<Results<Created<GeneroDTO>, ValidationProblem>> CrearGenero(CrearGeneroDTO crearGeneroDTO, [AsParameters]CrearGeneroPeticionDTO modelo)
         {
-            var genero = mapper.Map<Genero>(crearGeneroDTO);
-            var id = await repositorio.Crear(genero);
-            await outputCacheStore.EvictByTagAsync("generos-get", default);
-            var generoDTO = mapper.Map<GeneroDTO>(genero);
+            var genero = modelo.Mapper.Map<Genero>(crearGeneroDTO);
+            var id = await modelo.Repositorio.Crear(genero);
+            await modelo.OutputCacheStore.EvictByTagAsync("generos-get", default);
+            var generoDTO = modelo.Mapper.Map<GeneroDTO>(genero);
             return TypedResults.Created($"/{id}", generoDTO);
         }
 

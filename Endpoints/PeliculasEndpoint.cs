@@ -7,6 +7,7 @@ using MinimalAPIPeliculas.Entities;
 using MinimalAPIPeliculas.Filtros;
 using MinimalAPIPeliculas.Repositories;
 using MinimalAPIPeliculas.Servicios;
+using MinimalAPIPeliculas.Utilities;
 
 namespace MinimalAPIPeliculas.Endpoints
 {
@@ -16,12 +17,16 @@ namespace MinimalAPIPeliculas.Endpoints
         public static RouteGroupBuilder MapPeliculas(this RouteGroupBuilder group)
         {
             group.MapPost("/", Crear).DisableAntiforgery().RequireAuthorization("isAdmin");
-            group.MapGet("/", Obtener).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("peliculas-get"));
+
+            group.MapGet("/", Obtener).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("peliculas-get"))
+                .AgregarParametrosPaginacionAOpenAPI();
+
             group.MapGet("/{id:int}", ObtenerPorId);
             group.MapPut("/{id:int}", Actualizar).DisableAntiforgery().AddEndpointFilter<FiltroValidaciones<CrearPeliculaDTO>>().RequireAuthorization("isAdmin");
             group.MapDelete("/{id:int}", Borrar).RequireAuthorization("isAdmin");
             group.MapPost("/{id:int}/asignarGeneros", AsignarGeneros).AddEndpointFilter<FiltroValidaciones<CrearPeliculaDTO>>().RequireAuthorization("isAdmin");
             //group.MapPost("/{id:int}/asignarActores", AsignarActores);
+            group.MapGet("/filtrar", FiltrarPeliculas).AgregarParametrosPeliculasFiltroAOpenAPI();
             return group;
         }
 
@@ -42,9 +47,9 @@ namespace MinimalAPIPeliculas.Endpoints
         }
 
         static async Task<Ok<List<PeliculaDTO>>> Obtener(IRepositorioPeliculas repositorioPeliculas, 
-            IMapper mapper, int pagina = 1, int recordsPorPagina = 10)
+            IMapper mapper, PaginacionDTO paginacion)
         {
-            var paginacion = new PaginacionDTO { Pagina = pagina, RecordsPorPagina = recordsPorPagina };
+            //var paginacion = new PaginacionDTO { Pagina = pagina, RecordsPorPagina = recordsPorPagina };
             var peliculas = await repositorioPeliculas.ObtenerTodos(paginacion);
             var peliculasDTO = mapper.Map<List<PeliculaDTO>>(peliculas);
             return TypedResults.Ok(peliculasDTO);
@@ -148,6 +153,14 @@ namespace MinimalAPIPeliculas.Endpoints
             var actores = mapper.Map<List<ActorPelicula>>(actoresDTO);
             await repositorioPeliculas.AsignarActores(id, actores);
             return TypedResults.NoContent();
+        }
+
+        static async Task<Ok<List<PeliculaDTO>>> FiltrarPeliculas(PeliculasFiltrarDTO peliculasFiltrarDTO,
+            IRepositorioPeliculas repositorioPeliculas, IMapper mapper)
+        {
+            var peliculas = await repositorioPeliculas.Filtrar(peliculasFiltrarDTO);
+            var peliculasDTO = mapper.Map<List<PeliculaDTO>>(peliculas);
+            return TypedResults.Ok(peliculasDTO);
         }
     }
 }

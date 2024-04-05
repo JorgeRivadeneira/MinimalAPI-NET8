@@ -8,6 +8,7 @@ using MinimalAPIPeliculas.Entities;
 using MinimalAPIPeliculas.Filtros;
 using MinimalAPIPeliculas.Repositories;
 using MinimalAPIPeliculas.Servicios;
+using MinimalAPIPeliculas.Utilities;
 
 namespace MinimalAPIPeliculas.Endpoints
 {
@@ -18,13 +19,19 @@ namespace MinimalAPIPeliculas.Endpoints
         {
             group.MapPost("/", Crear).DisableAntiforgery()
                 .AddEndpointFilter<FiltroValidaciones<CrearActorDTO>>()
-                .RequireAuthorization("isAdmin");
-            group.MapGet("/", ObtenerTodos).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actores-get"));
+                .RequireAuthorization("isAdmin")
+                .WithOpenApi();
+
+            group.MapGet("/", ObtenerTodos).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actores-get"))
+                .AgregarParametrosPaginacionAOpenAPI();
+
             group.MapGet("/{id:int}", ObtenerPorId);
             group.MapGet("obtenerPorNombre/{nombre}", ObtenerPorNombre);
             group.MapPut("/{id:int}", Actualizar).DisableAntiforgery()
                 .AddEndpointFilter<FiltroValidaciones<CrearActorDTO>>()
-                .RequireAuthorization("isAdmin");
+                .RequireAuthorization("isAdmin")
+                .WithOpenApi();
+
             group.MapDelete("/{id:int}", Borrar).RequireAuthorization("isAdmin");
             return group;
         }
@@ -46,9 +53,9 @@ namespace MinimalAPIPeliculas.Endpoints
         }
 
         static async Task<Ok<List<ActorDTO>>> ObtenerTodos(IRepositorioActores repositorio, IMapper mapper,
-            int pagina = 1, int recordsPorPagina = 10)
+            PaginacionDTO paginacion)
         {
-            var paginacion = new PaginacionDTO { Pagina = pagina, RecordsPorPagina = recordsPorPagina };
+            //var paginacion = new PaginacionDTO { Pagina = pagina, RecordsPorPagina = recordsPorPagina };
             var actores = await repositorio.ObtenerTodos(paginacion);
             var actorDTO = mapper.Map<List<ActorDTO>>(actores);
             return TypedResults.Ok(actorDTO);
